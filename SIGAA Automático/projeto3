@@ -1,0 +1,42 @@
+import pyautogui
+import os
+import time
+
+
+senha = input("Digite sua senha do SIGAA e dê Enter: ")
+
+# Configurações de segurança
+pyautogui.PAUSE = 0.5
+
+# 1. Abrir Navegador
+os.system('start chrome --profile-directory="Profile 1"')
+time.sleep(2)
+
+# 2. Ir para o Site
+pyautogui.hotkey('ctrl', 'l')
+pyautogui.write("https://sigaa.ufpe.br/sigaa/verTelaLogin.do")
+pyautogui.press("enter")
+
+# 3. Esperar e Localizar o campo de Login
+print("Procurando o botão de login na tela...")
+time.sleep(3)
+
+try:
+    # Ele procura a imagem na tela com 80% de precisão
+    local_botao = pyautogui.locateOnScreen('botao_login.png', confidence=0.8)
+    
+    if local_botao:
+        # Acha o centro da imagem encontrada e clica
+        centro = pyautogui.center(local_botao)
+        pyautogui.click(centro)
+        
+        # Preenche os dados
+        pyautogui.write("Caioac")
+        pyautogui.press("tab")
+        pyautogui.write(f"{senha}")
+        pyautogui.press("enter")
+        print("Login realizado com sucesso!")
+    else:
+        print("Botão não encontrado. Verifique se a página carregou.")
+except Exception as e:
+    print(f"Erro ao localizar: {e}")
