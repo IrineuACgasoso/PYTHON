@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Supermercado</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #f4f7f6; /* Fundo cinza bem clarinho */
+            color: #333;
+            margin: 0;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1, h2 { text-align: center; color: #2c3e50; }
+        
+        .catalogo { 
+            display: flex; 
+            gap: 20px; 
+            flex-wrap: wrap; 
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        
+        /* Estilo das caixinhas de produto */
+        .produto-card { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 20px; 
+            text-align: center; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Sombreado elegante */
+            transition: transform 0.2s; /* Animação suave */
+        }
+        .produto-card:hover {
+            transform: translateY(-5px); /* Dá um pulinho quando passa o mouse */
+        }
+        .produto-card img { 
+            width: 120px; 
+            height: 120px; 
+            object-fit: cover; 
+            border-radius: 8px; 
+        }
+        
+        /* Estilo dos botões e campos */
+        input[type="number"] {
+            width: 50px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            text-align: center;
+        }
+        button {
+            background-color: #27ae60; /* Verde bonito */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #2ecc71; }
+        
+        /* Estilo da lista lá embaixo */
+        .caixa-lista {
+            background: white;
+            padding: 20px 40px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .item-lista {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 18px;
+        }
+        .item-lista:last-child { border-bottom: none; }
+        
+        .btn-remover {
+            background-color: #e74c3c; /* Vermelho */
+            padding: 6px 12px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn-remover:hover { background-color: #c0392b; }
+    </style>
+</head>
+<body>
+
+    <h1>🛒 Nossa Lista de Mercado</h1>
+
+    <h2>O que está faltando?</h2>
+    <div class="catalogo">
+        {% for produto in produtos %}
+        <div class="produto-card" style="position: relative;">
+            <a href="{{ url_for('remover_catalogo', nome_do_produto=produto.nome) }}" 
+               style="position: absolute; top: 5px; right: 10px; text-decoration: none; font-size: 18px; color: #e74c3c; font-weight: bold;" 
+               title="Excluir do catálogo">❌</a>
+
+            <img src="{{ url_for('static', filename=produto.imagem) }}" alt="{{ produto.nome }}">
+            <br>
+            <strong>{{ produto.nome }}</strong>
+            
+            <form method="POST" style="margin-top: 15px;">
+                <input type="hidden" name="produto" value="{{ produto.nome }}">
+                <input type="number" name="quantidade" value="1" min="1">
+                <br>
+                <button type="submit">+ Adicionar</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="caixa-lista" style="margin-bottom: 30px;">
+        <h2 style="margin-top: 0;">➕ Cadastrar Novo Produto</h2>
+        <form action="{{ url_for('novo_produto') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
+            <input type="text" name="nome_produto" placeholder="Ex: Macarrão" required style="padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family: inherit;">
+            
+            <div>
+                <label for="imagem_produto" style="font-size: 14px; color: #555;">Foto (opcional):</label>
+                <input type="file" name="imagem_produto" accept="image/*" style="font-size: 14px;">
+            </div>
+            
+            <button type="submit" style="background-color: #3498db; margin-top: 5px;">Cadastrar no Catálogo</button>
+        </form>
+    </div>
+
+    <hr style="width: 100%; border: 1px solid #ddd; margin: 30px 0;">
+
+    <div class="caixa-lista">
+        <h2>📝 Para Comprar:</h2>
+        <div>
+            {% for item in lista %}
+                <div class="item-lista">
+                    <span><strong>{{ item.quantidade }}x</strong> {{ item.nome }}</span>
+                    <a href="{{ url_for('remover', nome_do_produto=item.nome) }}" class="btn-remover">Remover</a>
+                </div>
+            {% else %}
+                <p style="text-align: center; color: #888; font-style: italic;">A lista está vazia! 🎉</p>
+            {% endfor %}
+        </div>
+    </div>
+
+</body>
+</html>
