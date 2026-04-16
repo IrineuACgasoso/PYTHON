@@ -92,8 +92,8 @@ def index():
         return redirect(url_for('index'))
     
     # READ (Ler): Pegamos todos os produtos e a lista para mandar pro HTML
-    produtos_disponiveis = conexao.execute('SELECT * FROM produtos').fetchall()
-    lista_de_compras = conexao.execute('SELECT * FROM lista_compras').fetchall()
+    produtos_disponiveis = conexao.execute('SELECT * FROM produtos ORDER BY nome ASC').fetchall()
+    lista_de_compras = conexao.execute('SELECT * FROM lista_compras ORDER BY nome ASC').fetchall()
     conexao.close()
 
     return render_template('index.html', produtos=produtos_disponiveis, lista=lista_de_compras)

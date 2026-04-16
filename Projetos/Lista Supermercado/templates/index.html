@@ -19,12 +19,31 @@
         }
         h1, h2 { text-align: center; color: #2c3e50; }
         
+        /* --- ESTILOS DA BARRA DE PESQUISA --- */
+        .search-container {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+        #barraPesquisa {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            font-family: inherit;
+            box-sizing: border-box;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
         .catalogo { 
             display: flex; 
             gap: 20px; 
             flex-wrap: wrap; 
             justify-content: center;
             margin-bottom: 40px;
+            width: 100%;
+            max-width: 1000px;
         }
         
         /* Estilo das caixinhas de produto */
@@ -35,6 +54,8 @@
             text-align: center; 
             box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Sombreado elegante */
             transition: transform 0.2s; /* Animação suave */
+            width: 160px; /* Largura padrão */
+            box-sizing: border-box;
         }
         .produto-card:hover {
             transform: translateY(-5px); /* Dá um pulinho quando passa o mouse */
@@ -63,6 +84,7 @@
             cursor: pointer;
             font-weight: 600;
             margin-top: 10px;
+            width: 100%;
         }
         button:hover { background-color: #2ecc71; }
         
@@ -74,6 +96,7 @@
             width: 100%;
             max-width: 500px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-sizing: border-box;
         }
         .item-lista {
             display: flex;
@@ -91,8 +114,51 @@
             text-decoration: none;
             border-radius: 6px;
             font-size: 14px;
+            color: white;
         }
         .btn-remover:hover { background-color: #c0392b; }
+
+        /* --- ESTILOS DO ARRASTAR E COLAR --- */
+        .dropzone {
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #7f8c8d;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        .dropzone.arrastando {
+            background-color: #e1f0fa;
+            border-color: #2980b9;
+            transform: scale(1.02);
+        }
+        #preview-imagem {
+            display: none;
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin: 0 auto 10px auto;
+            border: 2px solid #ddd;
+        }
+
+        /* --- MÁGICA PARA O CELULAR (Telas menores que 768px) --- */
+        @media (max-width: 768px) {
+            .catalogo {
+                flex-wrap: nowrap; /* Proíbe de quebrar linha */
+                overflow-x: auto; /* Cria a barra de rolagem horizontal */
+                justify-content: flex-start; /* Alinha os itens à esquerda */
+                padding-bottom: 15px; /* Dá espaço para o dedo não esbarrar embaixo */
+                -webkit-overflow-scrolling: touch; /* Deixa o deslizar macio no iPhone */
+            }
+            .produto-card {
+                flex: 0 0 auto; /* Impede que o cartão seja esmagado para caber na tela */
+                width: 150px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -100,7 +166,12 @@
     <h1>🛒 Nossa Lista de Mercado</h1>
 
     <h2>O que está faltando?</h2>
-    <div class="catalogo">
+
+    <div class="search-container">
+        <input type="text" id="barraPesquisa" placeholder="🔍 Pesquisar no catálogo..." onkeyup="filtrarProdutos()">
+    </div>
+
+    <div class="catalogo" id="catalogoProdutos">
         {% for produto in produtos %}
         <div class="produto-card" style="position: relative;">
             <a href="{{ url_for('remover_catalogo', nome_do_produto=produto.nome) }}" 
@@ -109,7 +180,7 @@
 
             <img src="{{ url_for('static', filename=produto.imagem) }}" alt="{{ produto.nome }}">
             <br>
-            <strong>{{ produto.nome }}</strong>
+            <strong class="nome-produto">{{ produto.nome }}</strong>
             
             <form method="POST" style="margin-top: 15px;">
                 <input type="hidden" name="produto" value="{{ produto.nome }}">
@@ -126,10 +197,12 @@
         <form action="{{ url_for('novo_produto') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
             <input type="text" name="nome_produto" placeholder="Ex: Macarrão" required style="padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-family: inherit;">
             
-            <div>
-                <label for="imagem_produto" style="font-size: 14px; color: #555;">Foto (opcional):</label>
-                <input type="file" name="imagem_produto" accept="image/*" style="font-size: 14px;">
+            <div id="dropzone" class="dropzone">
+                <p id="dropzone-texto" style="margin: 0; font-size: 14px;">📁 Arraste uma foto, cole (Ctrl+V) ou clique aqui</p>
+                <input type="file" name="imagem_produto" id="imagem_produto" accept="image/*" style="display: none;">
             </div>
+            
+            <img id="preview-imagem" src="" alt="Prévia">
             
             <button type="submit" style="background-color: #3498db; margin-top: 5px;">Cadastrar no Catálogo</button>
         </form>
@@ -151,5 +224,80 @@
         </div>
     </div>
 
+    <script>
+        // ==========================================
+        // 1. SCRIPT DA BARRA DE PESQUISA
+        // ==========================================
+        function filtrarProdutos() {
+            let textoPesquisa = document.getElementById('barraPesquisa').value.toLowerCase();
+            let cartoes = document.getElementsByClassName('produto-card');
+
+            for (let i = 0; i < cartoes.length; i++) {
+                let nomeDoProduto = cartoes[i].querySelector('.nome-produto').innerText.toLowerCase();
+                if (nomeDoProduto.includes(textoPesquisa)) {
+                    cartoes[i].style.display = ""; 
+                } else {
+                    cartoes[i].style.display = "none"; 
+                }
+            }
+        }
+
+        // ==========================================
+        // 2. SCRIPT DE ARRASTAR E COLAR IMAGENS
+        // ==========================================
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('imagem_produto');
+        const dropzoneTexto = document.getElementById('dropzone-texto');
+        const preview = document.getElementById('preview-imagem');
+
+        // Se clicar na caixa tracejada, abre a janela normal
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        // Efeitos visuais quando arrasta algo por cima
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('arrastando');
+        });
+        
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('arrastando');
+        });
+
+        // Quando solta o arquivo dentro da caixa
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('arrastando');
+            
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                mostrarPreview();
+            }
+        });
+
+        // Quando COLA (Ctrl+V) uma imagem
+        document.addEventListener('paste', (e) => {
+            if (e.clipboardData.files.length > 0) {
+                fileInput.files = e.clipboardData.files;
+                mostrarPreview();
+            }
+        });
+
+        // Se escolher o arquivo pelo método tradicional (clicando)
+        fileInput.addEventListener('change', mostrarPreview);
+
+        // Função para mostrar a foto pequenininha antes de salvar
+        function mostrarPreview() {
+            if (fileInput.files && fileInput.files[0]) {
+                const leitor = new FileReader();
+                leitor.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    dropzoneTexto.innerText = "✅ Imagem pronta para envio!";
+                    dropzone.style.borderColor = "#2ecc71"; // Fica verde
+                }
+                leitor.readAsDataURL(fileInput.files[0]);
+            }
+        }
+    </script>
 </body>
 </html>
