@@ -1,7 +1,0 @@
-flask
-flask-login
-flask-limiter
-flask-wtf
-python-dotenv
-werkzeug
-pillow
